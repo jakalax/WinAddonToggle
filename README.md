@@ -27,6 +27,9 @@ Active ou désactive **à la carte** les composants « add-on » de Windows 10 /
 .\WinAddonToggle.ps1 -Disable Clipchamp,News,Weather,Solitaire -DryRun
 .\WinAddonToggle.ps1 -Disable Clipchamp,News,Weather,Solitaire
 
+# Programmes lancés au démarrage (système + chaque utilisateur)
+.\WinAddonToggle.ps1 -ListStartup
+
 # Toute la liste de base, en gardant les paquets provisionnés
 .\WinAddonToggle.ps1 -Disable base -KeepProvisioned
 
@@ -61,6 +64,25 @@ Historique des versions : voir [CHANGELOG.md](CHANGELOG.md).
 | Fonctionnalité optionnelle (IE) | `Disable-WindowsOptionalFeature` | `Enable-WindowsOptionalFeature` |
 | Edge | `setup.exe --uninstall --system-level --force-uninstall` + blocage EdgeUpdate | `winget install Microsoft.Edge` |
 | OneDrive | Désinstalleur (utilisateur + machine), stratégie `DisableFileSyncNGSC`, retrait du profil par défaut | Suppression de la stratégie + `winget install Microsoft.OneDrive` |
+
+## Onglet « Programmes au démarrage »
+
+Équivalent plus complet de l'onglet Démarrage du Gestionnaire des tâches, avec la **portée** de chaque entrée :
+**Système** (tous les utilisateurs) ou **Utilisateur : nom**. Un filtre permet d'afficher une portée précise.
+
+| Source | Portée | Activer / désactiver |
+|---|---|---|
+| Registre `Run` (64 et 32 bits) | Système (HKLM) ou utilisateur (HKCU) | Clé `StartupApproved` (comme le Gestionnaire des tâches) |
+| Dossier Démarrage | Commun (ProgramData) ou du profil | Clé `StartupApproved\StartupFolder` |
+| Applications du Store (Spotify, WhatsApp, Teams…) | Utilisateur | Valeur `State` de la tâche de démarrage du paquet |
+| Tâches planifiées (ouverture de session / démarrage du PC) | Système ou utilisateur selon le déclencheur | `Enable-` / `Disable-ScheduledTask` |
+| Stratégie `Policies\Explorer\Run` | Système ou utilisateur | Lecture seule (à modifier dans la GPO) |
+
+- **Rien n'est supprimé** : une entrée désactivée se réactive d'un clic, ici ou dans le Gestionnaire des tâches.
+- **Tous les profils** du poste sont listés, y compris ceux dont la session n'est pas ouverte (leur ruche `NTUSER.DAT` est montée le temps de la lecture ou de la modification). Pour ces profils, les applications du Store ne sont pas listées.
+- Colonne **En cours** : le programme tourne actuellement. **⚠** : survolez le nom (ex. fichier introuvable = entrée orpheline d'un logiciel désinstallé).
+- Les tâches planifiées Microsoft sont masquées par défaut (case à cocher pour les inclure).
+- Effet à la prochaine ouverture de session.
 
 ## Limites à connaître
 
