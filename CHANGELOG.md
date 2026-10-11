@@ -3,7 +3,7 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · numérotation [SemVer](https://semver.org/lang/fr/)
 (MAJEUR.MINEUR.CORRECTIF : correctif = bug corrigé, mineur = nouvelle fonction, majeur = changement incompatible).
 
-## [1.1.0] - non publiée
+## [1.1.0] - 2026-10-11
 
 ### Ajouté
 - Onglet **Programmes au démarrage** : registre Run (64/32 bits), dossiers Démarrage, applications du Store,
