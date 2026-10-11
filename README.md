@@ -12,6 +12,7 @@ Active ou désactive **à la carte** les composants « add-on » de Windows 10 /
 |---|---|
 | `WinAddonToggle.ps1` | Le script (GUI WinForms + CLI). Windows PowerShell 5.1, droits admin. |
 | `addons.json` | Catalogue des composants. Ajoutez-y vos propres entrées. |
+| `CHANGELOG.md` | Historique des versions. |
 
 ## Utilisation
 
@@ -41,7 +42,9 @@ Active ou désactive **à la carte** les composants « add-on » de Windows 10 /
 
 Mots-clés acceptés par `-Disable` / `-Enable` : `base` (liste tiny11), `extra` (Copilot, Outlook new, Teams, WMP hérité), `all`.
 
-Code de sortie : `0` OK, `1` erreur, `3010` redémarrage requis. Journal dans `%ProgramData%\WinAddonToggle\logs`.
+Code de sortie : `0` OK, `1` au moins une étape a échoué (prioritaire), `3010` redémarrage requis. Journal dans `%ProgramData%\WinAddonToggle\logs` (la version du script y est indiquée).
+
+Historique des versions : voir [CHANGELOG.md](CHANGELOG.md).
 
 ### Profil JSON
 
