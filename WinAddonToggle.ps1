@@ -861,6 +861,18 @@ function Get-AppxStartup {
     foreach ($pk in Get-ChildItem -LiteralPath $base -ErrorAction SilentlyContinue) {
         $pkg = $script:StartupAppx[$pk.PSChildName]
         if (-not $pkg) { continue }   # reste d'une application désinstallée
+        if (-not $pkg.ManifestRead) {
+            $pkg.ManifestRead = $true
+            $manifest = Join-Path $pkg.Location 'AppxManifest.xml'
+            if (Test-Path -LiteralPath $manifest -PathType Leaf) {
+                try {
+                    $props = ([xml](Get-Content -LiteralPath $manifest -Raw -Encoding UTF8 -ErrorAction Stop)).Package.Properties
+                    if ($props.DisplayName -and $props.DisplayName -notlike 'ms-resource*') { $pkg.DisplayName = $props.DisplayName }
+                    if ($props.PublisherDisplayName -and $props.PublisherDisplayName -notlike 'ms-resource*') { $pkg.Publisher = $props.PublisherDisplayName }
+                }
+                catch { }   # manifeste illisible : on garde le nom technique du paquet
+            }
+        }
         foreach ($tk in Get-ChildItem -LiteralPath $pk.PSPath -ErrorAction SilentlyContinue) {
             $state = $tk.GetValue('State')
             if ($null -eq $state) { continue }
@@ -919,17 +931,12 @@ function Get-StartupEntries {
     }
     $script:StartupAppx = @{}
     $pkgs = try { @(Get-AppxPackage -AllUsers -ErrorAction Stop) } catch { @(Get-AppxPackage -ErrorAction SilentlyContinue) }
+    # Le manifeste (nom affiché, éditeur) n'est lu que plus tard, pour les seuls paquets ayant une tâche de démarrage
     foreach ($pkg in $pkgs) {
         if ($script:StartupAppx.ContainsKey($pkg.PackageFamilyName) -or -not $pkg.InstallLocation) { continue }
-        $dn = $pkg.Name -replace '^[^.]+\.', ''; $pub = ''
-        try {
-            $m = [xml](Get-Content -LiteralPath (Join-Path $pkg.InstallLocation 'AppxManifest.xml') -Raw -Encoding UTF8)
-            $props = $m.Package.Properties
-            if ($props.DisplayName -and $props.DisplayName -notlike 'ms-resource*') { $dn = $props.DisplayName }
-            if ($props.PublisherDisplayName -and $props.PublisherDisplayName -notlike 'ms-resource*') { $pub = $props.PublisherDisplayName }
+        $script:StartupAppx[$pkg.PackageFamilyName] = [pscustomobject]@{
+            DisplayName = ($pkg.Name -replace '^[^.]+\.', ''); Publisher = ''; Location = $pkg.InstallLocation; ManifestRead = $false
         }
-        catch { }
-        $script:StartupAppx[$pkg.PackageFamilyName] = [pscustomobject]@{ DisplayName = $dn; Publisher = $pub; Location = $pkg.InstallLocation }
     }
 
     $all = New-Object System.Collections.Generic.List[object]
