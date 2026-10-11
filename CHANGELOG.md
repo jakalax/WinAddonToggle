@@ -3,6 +3,17 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · numérotation [SemVer](https://semver.org/lang/fr/)
 (MAJEUR.MINEUR.CORRECTIF : correctif = bug corrigé, mineur = nouvelle fonction, majeur = changement incompatible).
 
+## [1.1.0] - non publiée
+
+### Ajouté
+- Onglet **Programmes au démarrage** : registre Run (64/32 bits), dossiers Démarrage, applications du Store,
+  tâches planifiées à l'ouverture de session / au démarrage, stratégies Run (lecture seule).
+  - Distinction **Système** / **Utilisateur : nom**, avec filtre par portée ; tous les profils du poste, session ouverte ou non.
+  - Activation / désactivation réversible, par le même mécanisme que le Gestionnaire des tâches.
+  - Colonnes « En cours », « Éditeur », signalement des entrées orphelines (fichier introuvable).
+- Paramètre `-ListStartup` (inventaire en ligne de commande).
+- « Mode simulation » commun aux deux onglets.
+
 ## [1.0.1] - 2026-10-11
 
 ### Corrigé
