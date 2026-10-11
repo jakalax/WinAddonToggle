@@ -68,6 +68,8 @@ param(
 
 Set-StrictMode -Version 2.0
 
+$ScriptVersion = '1.0.1'
+
 if (-not $CatalogPath) { $CatalogPath = Join-Path $PSScriptRoot 'addons.json' }
 if (-not $LogDir)      { $LogDir      = Join-Path $env:ProgramData 'WinAddonToggle\logs' }
 
@@ -116,7 +118,8 @@ $script:Offline               = [bool]$ImagePath
 $script:DryRunMode            = [bool]$DryRun
 $script:RemoveProvisionedMode = -not $KeepProvisioned
 $script:RebootRequired        = $false
-$script:Cache                 = $null
+$script:ErrorCount            = 0
+$script:Cache                = $null
 $script:LogSink               = $null
 $script:LogFile               = $null
 $script:Populating            = $false
@@ -138,8 +141,9 @@ function Write-Log {
 }
 
 # Exécute une action modifiante, en respectant le mode simulation. Retourne $true si succès.
+# -Optional : un échec n'est qu'un avertissement (une autre méthode prend le relais) et ne compte pas comme erreur.
 function Invoke-Step {
-    param([string]$StepDescription, [scriptblock]$StepAction)
+    param([string]$StepDescription, [scriptblock]$StepAction, [switch]$Optional)
     if ($script:DryRunMode) {
         Write-Log "[SIMULATION] $StepDescription"
         return $true
@@ -151,7 +155,13 @@ function Invoke-Step {
         return $true
     }
     catch {
-        Write-Log "Échec : $($_.Exception.Message)" 'ERR'
+        if ($Optional) {
+            Write-Log "Échec : $($_.Exception.Message) — tentative par une autre méthode." 'WARN'
+        }
+        else {
+            $script:ErrorCount++
+            Write-Log "Échec : $($_.Exception.Message)" 'ERR'
+        }
         return $false
     }
 }
@@ -527,7 +537,8 @@ function Enable-AppxItem {
     }
     $manifest = Find-AppxManifest $name
     if ($manifest) {
-        $ok = Invoke-Step "Ré-enregistrement de $name depuis $manifest" { Add-AppxPackage -Register $manifest -DisableDevelopmentMode }
+        $hasFallback = [bool]($Item.storeId -or $Item.winget)
+        $ok = Invoke-Step "Ré-enregistrement de $name depuis $manifest" { Add-AppxPackage -Register $manifest -DisableDevelopmentMode } -Optional:$hasFallback
         if ($ok) { return }
     }
     if ($Item.storeId) {
@@ -646,6 +657,8 @@ function Invoke-Plan {
         $ToEnable = @()
     }
     $script:RebootRequired = $false
+    $script:ErrorCount     = 0
+    Write-Log "WinAddonToggle $ScriptVersion"
     if (-not $script:Cache) { Update-SystemCache }
     if ($script:DryRunMode) { Write-Log '*** MODE SIMULATION : aucune modification ne sera effectuée ***' 'WARN' }
 
@@ -662,7 +675,8 @@ function Invoke-Plan {
         Write-Log "──── Activation : $($a.name)"
         Enable-Addon $a
     }
-    Write-Log 'Terminé.' 'OK'
+    if ($script:ErrorCount) { Write-Log "Terminé avec $($script:ErrorCount) erreur(s) : consultez le journal." 'ERR' }
+    else { Write-Log 'Terminé.' 'OK' }
     if ($script:RebootRequired) { Write-Log 'Un redémarrage est nécessaire pour finaliser certaines modifications.' 'WARN' }
     Write-Log "Journal : $script:LogFile"
 }
@@ -741,7 +755,7 @@ function Show-MainWindow {
     [System.Windows.Forms.Application]::EnableVisualStyles()
 
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = 'WinAddonToggle — composants Windows à la carte'
+    $form.Text = "WinAddonToggle $ScriptVersion — composants Windows à la carte"
     $form.Size = New-Object System.Drawing.Size(1150, 780)
     $form.StartPosition = 'CenterScreen'
     $form.Font = New-Object System.Drawing.Font('Segoe UI', 9)
@@ -817,7 +831,9 @@ function Show-MainWindow {
         if ($dlg.ShowDialog() -ne 'OK') { return }
         try {
             $prof = Get-Content -Path $dlg.FileName -Raw -Encoding UTF8 | ConvertFrom-Json
-            $dis = @($prof.disable); $en = @($prof.enable)
+            # Un profil peut ne contenir que "disable" ou que "enable" (mode strict : on teste avant de lire)
+            $dis = @(if ($prof.PSObject.Properties['disable']) { $prof.disable })
+            $en  = @(if ($prof.PSObject.Properties['enable'])  { $prof.enable })
             Set-RowsKeep { param($i) if ($dis -contains $i.Addon.id) { $false } elseif ($en -contains $i.Addon.id) { $true } else { $null } }
             Write-Log "Profil chargé : $($dlg.FileName)" 'OK'
         }
@@ -863,6 +879,10 @@ function Show-MainWindow {
             Update-GridRows
         }
         finally { Set-UiBusy $false }
+        if ($script:ErrorCount) {
+            [void][System.Windows.Forms.MessageBox]::Show("$($script:ErrorCount) étape(s) ont échoué. Consultez le journal en bas de la fenêtre.", 'WinAddonToggle',
+                [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Warning)
+        }
         if ($script:RebootRequired) {
             [void][System.Windows.Forms.MessageBox]::Show('Un redémarrage est nécessaire pour finaliser certaines modifications.', 'WinAddonToggle')
         }
@@ -934,6 +954,8 @@ if ($Disable -or $Enable -or $ConfigFile) {
         $conflict = @($toDisable | Where-Object { $toEnable -contains $_ })
         if ($conflict.Count) { throw "Composant(s) à la fois à activer et à désactiver : $(($conflict | ForEach-Object { $_.id }) -join ', ')" }
         Invoke-Plan -ToDisable $toDisable -ToEnable $toEnable
+        # Une erreur prime sur le redémarrage : le RMM doit signaler l'échec
+        if ($script:ErrorCount)     { exit 1 }
         if ($script:RebootRequired) { exit 3010 }
         exit 0
     }
