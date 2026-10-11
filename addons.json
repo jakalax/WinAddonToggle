@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "description": "Catalogue des composants gérés par WinAddonToggle. Basé sur la liste de tiny11builder (ntdevlabs). 'set' = base (liste principale) ou extra.",
+  "components": [
+    {
+      "id": "Clipchamp", "name": "Clipchamp", "category": "Multimédia", "set": "base",
+      "appx": [ { "name": "Clipchamp.Clipchamp", "storeId": "9P1J8S7CCWWT" } ]
+    },
+    {
+      "id": "News", "name": "Actualités (Microsoft News)", "category": "Actualités & infos", "set": "base",
+      "appx": [ { "name": "Microsoft.BingNews", "storeId": "9WZDNCRFHVFW" } ]
+    },
+    {
+      "id": "Weather", "name": "Météo (MSN Weather)", "category": "Actualités & infos", "set": "base",
+      "appx": [ { "name": "Microsoft.BingWeather", "storeId": "9WZDNCRFJ3Q2" } ]
+    },
+    {
+      "id": "Xbox", "name": "Xbox (app, Game Bar, services)", "category": "Jeux", "set": "base",
+      "warning": "Retirer Xbox Identity Provider / Game Bar peut casser Win+G, l'enregistrement d'écran de jeu et la connexion Xbox de certains jeux PC.",
+      "appx": [
+        { "name": "Microsoft.GamingApp", "storeId": "9MV0B5HZVK9Z" },
+        { "name": "Microsoft.XboxApp" },
+        { "name": "Microsoft.Xbox.TCUI" },
+        { "name": "Microsoft.XboxGameOverlay" },
+        { "name": "Microsoft.XboxGamingOverlay", "storeId": "9NZKPSTSNW4P" },
+        { "name": "Microsoft.XboxIdentityProvider", "storeId": "9WZDNCRD1HKW" },
+        { "name": "Microsoft.XboxSpeechToTextOverlay" }
+      ]
+    },
+    {
+      "id": "GetHelp", "name": "Obtenir de l'aide", "category": "Aide & découverte", "set": "base",
+      "appx": [ { "name": "Microsoft.GetHelp", "storeId": "9PKDZBMV1H3T" } ]
+    },
+    {
+      "id": "GetStarted", "name": "Astuces / Bien démarrer", "category": "Aide & découverte", "set": "base",
+      "appx": [ { "name": "Microsoft.Getstarted" } ]
+    },
+    {
+      "id": "OfficeHub", "name": "Microsoft 365 (Office Hub)", "category": "Productivité", "set": "base",
+      "appx": [ { "name": "Microsoft.MicrosoftOfficeHub", "storeId": "9WZDNCRD29V9" } ]
+    },
+    {
+      "id": "Solitaire", "name": "Microsoft Solitaire Collection", "category": "Jeux", "set": "base",
+      "appx": [ { "name": "Microsoft.MicrosoftSolitaireCollection", "storeId": "9WZDNCRFHWD2" } ]
+    },
+    {
+      "id": "People", "name": "Contacts (People)", "category": "Communication", "set": "base",
+      "notes": "Application abandonnée par Microsoft : réinstallation impossible une fois retirée.",
+      "appx": [ { "name": "Microsoft.People" } ]
+    },
+    {
+      "id": "PowerAutomate", "name": "Power Automate Desktop", "category": "Productivité", "set": "base",
+      "appx": [ { "name": "Microsoft.PowerAutomateDesktop", "storeId": "9NFTCH6J7FHV" } ]
+    },
+    {
+      "id": "ToDo", "name": "Microsoft To Do", "category": "Productivité", "set": "base",
+      "appx": [ { "name": "Microsoft.Todos", "storeId": "9NBLGGH5R558" } ]
+    },
+    {
+      "id": "Alarms", "name": "Horloge / Alarmes", "category": "Système & accessoires", "set": "base",
+      "appx": [ { "name": "Microsoft.WindowsAlarms", "storeId": "9WZDNCRFJ3PR" } ]
+    },
+    {
+      "id": "MailCalendar", "name": "Courrier et Calendrier", "category": "Communication", "set": "base",
+      "notes": "Application retirée par Microsoft (remplacée par Outlook (new)) : réinstallation impossible.",
+      "appx": [ { "name": "microsoft.windowscommunicationsapps" } ]
+    },
+    {
+      "id": "FeedbackHub", "name": "Hub de commentaires", "category": "Aide & découverte", "set": "base",
+      "appx": [ { "name": "Microsoft.WindowsFeedbackHub", "storeId": "9NBLGGH4R32N" } ]
+    },
+    {
+      "id": "Maps", "name": "Cartes", "category": "Système & accessoires", "set": "base",
+      "notes": "Application retirée par Microsoft : réinstallation impossible.",
+      "appx": [ { "name": "Microsoft.WindowsMaps" } ]
+    },
+    {
+      "id": "SoundRecorder", "name": "Enregistreur audio", "category": "Système & accessoires", "set": "base",
+      "appx": [ { "name": "Microsoft.WindowsSoundRecorder", "storeId": "9WZDNCRFHWKN" } ]
+    },
+    {
+      "id": "YourPhone", "name": "Lien avec Windows (Your Phone)", "category": "Communication", "set": "base",
+      "appx": [ { "name": "Microsoft.YourPhone", "storeId": "9NMPJ99VJBWV" } ]
+    },
+    {
+      "id": "MediaPlayer", "name": "Lecteur multimédia + Films et TV", "category": "Multimédia", "set": "base",
+      "appx": [
+        { "name": "Microsoft.ZuneMusic", "storeId": "9WZDNCRFJ3PT" },
+        { "name": "Microsoft.ZuneVideo", "storeId": "9WZDNCRFJ3P2" }
+      ]
+    },
+    {
+      "id": "QuickAssist", "name": "Assistance rapide", "category": "Système & accessoires", "set": "base",
+      "appx": [ { "name": "MicrosoftCorporationII.QuickAssist", "storeId": "9P7BP5VNWKX5" } ],
+      "capabilities": [ "App.Support.QuickAssist*" ]
+    },
+    {
+      "id": "InternetExplorer", "name": "Internet Explorer 11", "category": "Navigateurs & cloud", "set": "base",
+      "capabilities": [ "Browser.InternetExplorer*" ],
+      "features": [ "Internet-Explorer-Optional-*" ]
+    },
+    {
+      "id": "TabletPCMath", "name": "Panneau de saisie mathématique (Tablet PC Math)", "category": "Système & accessoires", "set": "base",
+      "capabilities": [ "MathRecognizer*" ]
+    },
+    {
+      "id": "Edge", "name": "Microsoft Edge", "category": "Navigateurs & cloud", "set": "base",
+      "special": "edge",
+      "warning": "Désinstallation supportée par Microsoft uniquement dans l'EEE. WebView2 et EdgeUpdate sont conservés (requis par Teams, Outlook, widgets…)."
+    },
+    {
+      "id": "OneDrive", "name": "OneDrive", "category": "Navigateurs & cloud", "set": "base",
+      "special": "onedrive",
+      "warning": "Désinstalle OneDrive pour l'utilisateur courant et la version machine, l'empêche de s'installer pour les nouveaux profils et le bloque par stratégie (DisableFileSyncNGSC). Vérifiez que les fichiers sont synchronisés avant."
+    },
+    {
+      "id": "Copilot", "name": "Copilot", "category": "Extras (liste tiny11)", "set": "extra",
+      "appx": [
+        { "name": "Microsoft.Copilot", "storeId": "9NHT9RB2F4HD" },
+        { "name": "Microsoft.Windows.Copilot" }
+      ]
+    },
+    {
+      "id": "OutlookNew", "name": "Outlook (new)", "category": "Extras (liste tiny11)", "set": "extra",
+      "appx": [ { "name": "Microsoft.OutlookForWindows", "storeId": "9NRX63209R7B" } ]
+    },
+    {
+      "id": "TeamsPersonal", "name": "Microsoft Teams (préinstallé)", "category": "Extras (liste tiny11)", "set": "extra",
+      "appx": [
+        { "name": "MSTeams", "winget": "Microsoft.Teams" },
+        { "name": "MicrosoftTeams" }
+      ]
+    },
+    {
+      "id": "WMPLegacy", "name": "Lecteur Windows Media (hérité)", "category": "Extras (liste tiny11)", "set": "extra",
+      "capabilities": [ "Media.WindowsMediaPlayer*" ]
+    }
+  ]
+}

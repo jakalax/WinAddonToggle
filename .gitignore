@@ -1,0 +1,11 @@
+# Journaux d'exécution
+*.log
+logs/
+
+# Profils exportés pour des clients (à ne pas publier)
+profil-*.json
+
+# Fichiers système / éditeur
+Thumbs.db
+desktop.ini
+.vscode/
