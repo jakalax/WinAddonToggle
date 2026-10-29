@@ -75,7 +75,7 @@ param(
 
 Set-StrictMode -Version 2.0
 
-$ScriptVersion = '1.1.0'
+$ScriptVersion = '1.2.0'
 
 if (-not $CatalogPath) { $CatalogPath = Join-Path $PSScriptRoot 'addons.json' }
 if (-not $LogDir)      { $LogDir      = Join-Path $env:ProgramData 'WinAddonToggle\logs' }
@@ -129,6 +129,7 @@ $script:ErrorCount            = 0
 $script:Cache                = $null
 $script:LogSink               = $null
 $script:LogFile               = $null
+$script:ProfileExistsCache    = @{}
 $script:Populating            = $false
 $script:Ui                    = @{}
 
@@ -260,8 +261,46 @@ function Update-SystemCache {
             Feats = if ($needFeats) { @(Get-WindowsOptionalFeature -Online -ErrorAction SilentlyContinue) } else { @() }
         }
     }
+    if (-not $script:Offline) {
+        $script:ProfileExistsCache = @{}
+        $sids = $script:Cache.Appx | ForEach-Object { $_.PackageUserInformation } | Where-Object { $_ } |
+            ForEach-Object { $_.UserSecurityId.Sid } | Where-Object { $_ } | Sort-Object -Unique
+        foreach ($sid in $sids) {
+            if (-not (Test-ProfileExists $sid)) {
+                Write-Log "Profil supprimé détecté (SID $sid) : ses paquets Appx seront ignorés (désinstallation et vérification)." 'WARN'
+            }
+        }
+    }
     Write-Log ("Inventaire : {0} paquets installés, {1} provisionnés, {2} capacités, {3} fonctionnalités." -f `
         $script:Cache.Appx.Count, $script:Cache.Prov.Count, $script:Cache.Caps.Count, $script:Cache.Feats.Count)
+}
+
+# Un SID de ProfileList sans dossier de profil existant = compte supprimé
+function Test-ProfileExists {
+    param([string]$Sid)
+    if ($script:ProfileExistsCache.ContainsKey($Sid)) { return $script:ProfileExistsCache[$Sid] }
+    $exists = $false
+    try {
+        $path = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$Sid" -ErrorAction Stop).ProfileImagePath
+        $path = [Environment]::ExpandEnvironmentVariables([string]$path)
+        $exists = [bool]($path -and (Test-Path -LiteralPath $path))
+    }
+    catch { $exists = $false }
+    $script:ProfileExistsCache[$Sid] = $exists
+    return $exists
+}
+
+# Un paquet enregistré uniquement pour des profils supprimés n'est plus réellement présent
+function Test-AppxPackageActive {
+    param($Package)
+    $info = @()
+    try { $info = @($Package.PackageUserInformation) } catch { $info = @() }
+    if (-not $info.Count) { return $true }   # information indisponible : présent par prudence
+    foreach ($u in $info) {
+        $sid = $u.UserSecurityId.Sid
+        if ($sid -and (Test-ProfileExists $sid)) { return $true }
+    }
+    return $false
 }
 
 function Get-SystemBase {
@@ -300,7 +339,7 @@ function Get-AddonState {
     foreach ($a in @($Addon.appx)) {
         if (-not $a) { continue }
         $applicable = $true
-        $u = @($script:Cache.Appx | Where-Object { $_.Name -eq $a.name })
+        $u = @($script:Cache.Appx | Where-Object { $_.Name -eq $a.name -and (Test-AppxPackageActive $_) })
         $p = @($script:Cache.Prov | Where-Object { $_.DisplayName -eq $a.name })
         if ($u.Count -or $p.Count) {
             $present = $true
@@ -360,9 +399,10 @@ function Disable-AppxItem {
     if (-not $script:Offline) {
         foreach ($pkg in @($script:Cache.Appx | Where-Object { $_.Name -eq $name })) {
             $target = $pkg
-            [void](Invoke-Step "Désinstallation de $($target.PackageFullName) (tous les utilisateurs)" {
+            $ok = Invoke-Step "Désinstallation de $($target.PackageFullName) (tous les utilisateurs)" {
                 $target | Remove-AppxPackage -AllUsers
-            })
+            } -Optional
+            if (-not $ok) { Disable-AppxItemPerUser $target }
         }
     }
     if ($script:Offline -or $script:RemoveProvisionedMode) {
@@ -374,6 +414,29 @@ function Disable-AppxItem {
             })
         }
     }
+}
+
+# Repli quand -AllUsers échoue en bloc (typiquement un profil supprimé) : on retire le paquet
+# compte par compte, en ignorant les profils supprimés, puis pour l'utilisateur courant.
+function Disable-AppxItemPerUser {
+    param($Package)
+    $fullName = $Package.PackageFullName
+    $users = @()
+    try { $users = @($Package.PackageUserInformation) } catch { $users = @() }
+    foreach ($u in $users) {
+        $sid = $u.UserSecurityId.Sid
+        if (-not $sid) { continue }
+        if (-not (Test-ProfileExists $sid)) {
+            Write-Log "$fullName : profil supprimé (SID $sid), désinstallation ignorée." 'WARN'
+            continue
+        }
+        [void](Invoke-Step "Désinstallation de $fullName pour le SID $sid" {
+            Remove-AppxPackage -Package $fullName -User $sid
+        })
+    }
+    [void](Invoke-Step "Désinstallation de $fullName pour l'utilisateur courant" {
+        Remove-AppxPackage -Package $fullName
+    } -Optional)
 }
 
 function Disable-CapabilityItem {
@@ -391,6 +454,14 @@ function Disable-FeatureItem {
     param([string]$Pattern)
     foreach ($f in @($script:Cache.Feats | Where-Object { $_.FeatureName -like $Pattern -and [string]$_.State -eq 'Enabled' })) {
         $n = $f.FeatureName
+        # Le retrait d'une capacité (ex. Internet Explorer) peut désactiver la fonctionnalité associée
+        # en effet de bord : on revérifie l'état réel pour ne pas tenter une désactivation déjà faite.
+        $current = if ($script:Offline) { Get-WindowsOptionalFeature -Path $ImagePath -FeatureName $n -ErrorAction SilentlyContinue }
+                   else { Get-WindowsOptionalFeature -Online -FeatureName $n -ErrorAction SilentlyContinue }
+        if ($current -and [string]$current.State -ne 'Enabled') {
+            Write-Log "$n : déjà désactivée (effet de bord d'une autre opération)."
+            continue
+        }
         [void](Invoke-Step "Désactivation de la fonctionnalité $n" {
             $r = if ($script:Offline) { Disable-WindowsOptionalFeature -Path $ImagePath -FeatureName $n }
                  else { Disable-WindowsOptionalFeature -Online -FeatureName $n -NoRestart }

@@ -3,6 +3,17 @@
 Format : [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) · numérotation [SemVer](https://semver.org/lang/fr/)
 (MAJEUR.MINEUR.CORRECTIF : correctif = bug corrigé, mineur = nouvelle fonction, majeur = changement incompatible).
 
+## [1.2.0] - 2026-10-28
+
+### Corrigé
+- Désinstallation Appx : `Remove-AppxPackage -AllUsers` échoue en bloc si un seul compte enregistré pose
+  problème (typiquement un profil supprimé). Le script retire désormais le paquet compte par compte
+  (`-User <SID>`) en repli, puis pour l'utilisateur courant. Les profils supprimés sont signalés et ignorés,
+  y compris lors de la vérification finale de l'état.
+- Internet Explorer : le retrait de la capacité `Browser.InternetExplorer*` désactive déjà la fonctionnalité
+  `Internet-Explorer-Optional-*`. Le script revérifie l'état réel de la fonctionnalité avant de tenter de la
+  désactiver, ce qui évite une erreur sur une action déjà faite.
+
 ## [1.1.0] - 2026-10-11
 
 ### Ajouté
